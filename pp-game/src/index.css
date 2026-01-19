@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Privacy Quest Design System - Educational, Friendly, Non-competitive */
+
+@layer base {
+  :root {
+    /* Main background - warm off-white */
+    --background: 40 33% 98%;
+    --foreground: 200 25% 20%;
+
+    /* Cards - clean white */
+    --card: 0 0% 100%;
+    --card-foreground: 200 25% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 25% 20%;
+
+    /* Primary - Friendly teal/mint */
+    --primary: 168 55% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Soft lavender */
+    --secondary: 240 20% 96%;
+    --secondary-foreground: 200 25% 25%;
+
+    /* Muted - Gentle gray */
+    --muted: 200 15% 94%;
+    --muted-foreground: 200 15% 45%;
+
+    /* Accent - Warm coral for positive actions */
+    --accent: 15 85% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Success - Soft green */
+    --success: 145 50% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - Warm amber */
+    --warning: 38 92% 55%;
+    --warning-foreground: 38 92% 15%;
+
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 20% 88%;
+    --input: 200 20% 88%;
+    --ring: 168 55% 42%;
+
+    --radius: 1rem;
+
+    
+    /* Game-specific colors */
+    --game-positive: 145 60% 45%;
+    --game-negative: 0 65% 55%;
+    --game-neutral: 200 15% 50%;
+    
+    /* Minigame overlay */
+    --overlay: 200 25% 10%;
+    
+    /* Score display */
+    --score-bg: 168 55% 95%;
+    --score-border: 168 55% 80%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 200 25% 10%;
+    --foreground: 40 20% 95%;
+
+    --card: 200 25% 14%;
+    --card-foreground: 40 20% 95%;
+
+    --popover: 200 25% 14%;
+    --popover-foreground: 40 20% 95%;
+
+    --primary: 168 50% 50%;
+    --primary-foreground: 200 25% 10%;
+
+    --secondary: 200 20% 20%;
+    --secondary-foreground: 40 20% 90%;
+
+    --muted: 200 20% 18%;
+    --muted-foreground: 200 15% 60%;
+
+    --accent: 15 80% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 145 45% 50%;
+    --success-foreground: 145 45% 10%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 20% 22%;
+    --input: 200 20% 22%;
+    --ring: 168 50% 50%;
+
+    --score-bg: 168 30% 15%;
+    --score-border: 168 30% 30%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Game card styles */
+  .game-card {
+    @apply bg-card rounded-2xl shadow-lg border border-border p-6 transition-all duration-300;
+  }
+  
+  .game-card-hover {
+    @apply hover:shadow-xl hover:-translate-y-1;
+  }
+  
+  /* Score display */
+  .score-badge {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold;
+    background: hsl(var(--score-bg));
+    border: 2px solid hsl(var(--score-border));
+  }
+  
+  /* Positive/Negative indicators */
+  .score-positive {
+    color: hsl(var(--game-positive));
+  }
+  
+  .score-negative {
+    color: hsl(var(--game-negative));
+  }
+  
+  /* Minigame animations */
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes pulse-soft {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.02);
+    }
+  }
+  
+  @keyframes confetti {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-100px) rotate(720deg);
+      opacity: 0;
+    }
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+  
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+  
+  .animate-confetti {
+    animation: confetti 1s ease-out forwards;
+  }
+}
