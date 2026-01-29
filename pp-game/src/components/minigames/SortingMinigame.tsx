@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface SortingMinigameProps {
   onComplete: () => void;
@@ -21,28 +21,15 @@ const allDataItems: DataItem[] = [
   { id: '8', text: 'Je geboortedatum', isSensitive: true },
 ];
 
+function getInitialItems() {
+  return [...allDataItems].sort(() => Math.random() - 0.5).slice(0, 6);
+}
+
 function SortingMinigame({ onComplete }: SortingMinigameProps) {
-  const [items, setItems] = useState<DataItem[]>([]);
-  const [sortedItems, setSortedItems] = useState<{ safe: string[]; sensitive: string[] }>({
-    safe: [],
-    sensitive: [],
-  });
+  const [items, setItems] = useState<DataItem[]>(getInitialItems);
   const [feedback, setFeedback] = useState<{ id: string; correct: boolean } | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
-
-  useEffect(() => {
-    initializeGame();
-  }, []);
-
-  const initializeGame = () => {
-    const shuffled = [...allDataItems].sort(() => Math.random() - 0.5).slice(0, 6);
-    setItems(shuffled);
-    setSortedItems({ safe: [], sensitive: [] });
-    setFeedback(null);
-    setIsComplete(false);
-    setScore({ correct: 0, total: 0 });
-  };
 
   const handleSort = (item: DataItem, category: 'safe' | 'sensitive') => {
     const isCorrect = (category === 'sensitive' && item.isSensitive) || 
@@ -52,10 +39,6 @@ function SortingMinigame({ onComplete }: SortingMinigameProps) {
     
     setTimeout(() => {
       setItems(items.filter(i => i.id !== item.id));
-      setSortedItems(prev => ({
-        ...prev,
-        [category]: [...prev[category], item.id]
-      }));
       setScore(prev => ({
         correct: prev.correct + (isCorrect ? 1 : 0),
         total: prev.total + 1

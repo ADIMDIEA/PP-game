@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface MemoryMinigameProps {
   onComplete: () => void;
@@ -6,30 +6,22 @@ interface MemoryMinigameProps {
 
 const icons = ['🔒', '📧', '🛡️', '👤', '🔑', '📱'];
 
+function initializeCards() {
+  return [...icons, ...icons]
+    .sort(() => Math.random() - 0.5)
+    .map((icon, index) => ({
+      id: index,
+      icon,
+      flipped: false,
+      matched: false,
+    }));
+}
+
 function MemoryMinigame({ onComplete }: MemoryMinigameProps) {
-  const [cards, setCards] = useState<{ id: number; icon: string; flipped: boolean; matched: boolean }[]>([]);
+  const [cards, setCards] = useState<{ id: number; icon: string; flipped: boolean; matched: boolean }[]>(initializeCards);
   const [flippedCards, setFlippedCards] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
-
-  useEffect(() => {
-    initializeGame();
-  }, []);
-
-  const initializeGame = () => {
-    const shuffledIcons = [...icons, ...icons]
-      .sort(() => Math.random() - 0.5)
-      .map((icon, index) => ({
-        id: index,
-        icon,
-        flipped: false,
-        matched: false,
-      }));
-    setCards(shuffledIcons);
-    setFlippedCards([]);
-    setMoves(0);
-    setIsComplete(false);
-  };
 
   const handleCardClick = (id: number) => {
     if (flippedCards.length === 2) return;
@@ -47,14 +39,18 @@ function MemoryMinigame({ onComplete }: MemoryMinigameProps) {
       
       const [first, second] = newFlipped;
       if (newCards[first].icon === newCards[second].icon) {
-        // Match found
-        newCards[first].matched = true;
-        newCards[second].matched = true;
-        setCards(newCards);
+        // Match found - create new objects to avoid mutation
+        const updatedCards = newCards.map((card, index) => {
+          if (index === first || index === second) {
+            return { ...card, matched: true };
+          }
+          return card;
+        });
+        setCards(updatedCards);
         setFlippedCards([]);
 
         // Check if game is complete
-        if (newCards.every(card => card.matched)) {
+        if (updatedCards.every(card => card.matched)) {
           setIsComplete(true);
           setTimeout(() => {
             onComplete();

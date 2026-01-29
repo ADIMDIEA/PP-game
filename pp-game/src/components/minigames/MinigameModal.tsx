@@ -18,23 +18,17 @@ function MinigameModal({
   onFail,
   timeLimit = MINIGAME_TIME_LIMIT
 }: MinigameModalProps) {
+  // Initialize minigame selection once when component mounts or when modal opens
+  const [currentMinigameId] = useState<string>(() => {
+    const availableMinigames = ['memory', 'quiz', 'sorting'];
+    return availableMinigames[Math.floor(Math.random() * availableMinigames.length)];
+  });
+  
   const [timeLeft, setTimeLeft] = useState(timeLimit);
-  const [currentMinigameId, setCurrentMinigameId] = useState<string>('');
-
-  useEffect(() => {
-    if (isOpen) {
-      // Pick a random minigame when modal opens
-      const availableMinigames = ['memory', 'quiz', 'sorting'];
-      const selectedGame = availableMinigames[Math.floor(Math.random() * availableMinigames.length)];
-      setCurrentMinigameId(selectedGame);
-      setTimeLeft(timeLimit);
-    }
-  }, [isOpen, timeLimit]);
 
   // Timer effect
   useEffect(() => {
     if (!isOpen) {
-      setTimeLeft(timeLimit);
       return;
     }
 

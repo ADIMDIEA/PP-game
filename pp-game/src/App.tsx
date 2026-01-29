@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import MinigameModal from './components/minigames/MinigameModal'
 
 interface Email {
@@ -15,28 +15,7 @@ interface LeaderboardPlayer {
   score: number;
 }
 
-function App() {
-  
-  const [screen, setScreen] = useState("start"); // start | email | results | lose
-  const [emails, setEmails] = useState<Email[]>([]);
-  const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
-  const [highlights, setHighlights] = useState<string[]>([]);
-  const [score, setScore] = useState(0);
-  const [previousScore, setPreviousScore] = useState<number | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardPlayer[]>([]);
-
-  // Minigame state
-  const [showMinigame, setShowMinigame] = useState(false);
-  const [pendingDecision, setPendingDecision] = useState<string | null>(null);
-  const [secondChanceGranted, setSecondChanceGranted] = useState(false);
-  const [wrongAnswerAttempt, setWrongAnswerAttempt] = useState(false);
-  const [minigamePlays, setMinigamePlays] = useState(0);
-
-  const MAX_MINIGAME_PLAYS = 2;
-
-  // Mock data
-  useEffect(() => {
-    setEmails([
+const MOCK_EMAILS: Email[] = [
       {
         id: 1,
         subject: "Vraag: Lijst met BSN voor aanvragers",
@@ -145,8 +124,25 @@ function App() {
         sensitiveData: ["telefoonnummer", "emailadres"],
         explanation: "Telefoonnummer en e-mailadres zijn persoonsgegevens en mogen niet zomaar gedeeld worden.",
       },
-    ]);
-  }, []);
+    ];
+
+function App() {
+  
+  const [screen, setScreen] = useState("start"); // start | email | results | lose
+  const [emails] = useState<Email[]>(MOCK_EMAILS);
+  const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
+  const [highlights, setHighlights] = useState<string[]>([]);
+  const [score, setScore] = useState(0);
+  const [previousScore, setPreviousScore] = useState<number | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardPlayer[]>([]);
+
+  // Minigame state
+  const [showMinigame, setShowMinigame] = useState(false);
+  const [secondChanceGranted, setSecondChanceGranted] = useState(false);
+  const [wrongAnswerAttempt, setWrongAnswerAttempt] = useState(false);
+  const [minigamePlays, setMinigamePlays] = useState(0);
+
+  const MAX_MINIGAME_PLAYS = 2;
 
   // Fake leaderboard ophalen
   const startGame = async () => {
@@ -191,7 +187,6 @@ function App() {
     
     // If wrong answer and no second chance granted yet, trigger minigame
     if (!isCorrect && !secondChanceGranted && !wrongAnswerAttempt) {
-      setPendingDecision(decision);
       setWrongAnswerAttempt(true);
       setMinigamePlays(prev => prev + 1);
       setShowMinigame(true);
@@ -214,7 +209,6 @@ function App() {
     // Reset minigame state for next question
     setSecondChanceGranted(false);
     setWrongAnswerAttempt(false);
-    setPendingDecision(null);
 
     const nextIndex = currentEmailIndex + 1;
     if (nextIndex >= emails.length) {
@@ -230,7 +224,6 @@ function App() {
     setShowMinigame(false);
     setSecondChanceGranted(true);
     setWrongAnswerAttempt(false);
-    setPendingDecision(null);
     // User stays on the same question for a retry
   };
 
@@ -239,7 +232,6 @@ function App() {
     setHighlights([]);
     setSecondChanceGranted(false);
     setWrongAnswerAttempt(false);
-    setPendingDecision(null);
     setScreen("lose");
   };
 
@@ -250,7 +242,9 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ score: finalScore }),
       });
-    } catch {}
+    } catch {
+      // Silently fail - score saving is optional
+    }
   };
 
   const compareScores = () => {
@@ -269,7 +263,7 @@ function App() {
           <div className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
             <span className="text-5xl">🔒</span>
           </div>
-          <h1 className="text-5xl font-bold text-foreground mb-3">Privacy Quest</h1>
+          <h1 className="text-5xl font-bold text-foreground mb-3">Email verzending</h1>
           <p className="text-lg text-muted-foreground mb-8">Leer over privacy door e-mails te beoordelen</p>
         </div>
         <button
@@ -362,6 +356,7 @@ function App() {
 
         {/* Minigame Modal */}
         <MinigameModal 
+          key={currentEmailIndex}
           isOpen={showMinigame}
           onSuccess={handleMinigameSuccess}
           onFail={handleMinigameFail}
