@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import './App.css'
+import MinigameModal from './components/minigames/MinigameModal'
 
 interface Email {
   id: number;
@@ -17,7 +17,7 @@ interface LeaderboardPlayer {
 
 function App() {
   
-  const [screen, setScreen] = useState("start"); // start | email | minigame | results
+  const [screen, setScreen] = useState("start"); // start | email | results | lose
   const [emails, setEmails] = useState<Email[]>([]);
   const [currentEmailIndex, setCurrentEmailIndex] = useState(0);
   const [highlights, setHighlights] = useState<string[]>([]);
@@ -25,39 +25,48 @@ function App() {
   const [previousScore, setPreviousScore] = useState<number | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardPlayer[]>([]);
 
+  // Minigame state
+  const [showMinigame, setShowMinigame] = useState(false);
+  const [pendingDecision, setPendingDecision] = useState<string | null>(null);
+  const [secondChanceGranted, setSecondChanceGranted] = useState(false);
+  const [wrongAnswerAttempt, setWrongAnswerAttempt] = useState(false);
+  const [minigamePlays, setMinigamePlays] = useState(0);
+
+  const MAX_MINIGAME_PLAYS = 2;
+
   // Mock data
   useEffect(() => {
     setEmails([
       {
         id: 1,
-        subject: "Vraag: Adresgegevens buurtfeest?",
+        subject: "Vraag: Lijst met BSN voor aanvragers",
         content:
-          "Hoi Jan, kun je me alle adressen van de Dorpsstraat mailen? Ik ga het buurtfeest organiseren en moet iedereen uitnodigen. Alvast bedankt!",
+          "Hoi, kun je mij de BSN lijst sturen van alle aanvragers? Graag ook per persoon het adres en de geboortedatum. Dan kunnen we dit snel verwerken.",
         correctDecision: "reject",
-        sensitiveData: ["adressen", "Dorpsstraat"],
-        explanation: "Adresgegevens zijn persoonsgegevens die niet zomaar via email verspreid mogen worden.",
+        sensitiveData: ["BSN", "adres", "geboortedatum"],
+        explanation: "BSN, adres en geboortedatum zijn persoonsgegevens en mogen niet zomaar via e-mail gedeeld worden.",
       },
       {
         id: 2,
-        subject: "Info: Vergunning aanvraag procedure",
+        subject: "Info: Nieuwe procedure bouwvergunning",
         content:
-          "De procedure voor een bouwvergunning is gewijzigd. Je moet voortaan eerst naar het infoloket gaan met je id-bewijs en persoonlijke voorkeursdatum. Meer info op onze website.",
+          "De procedure voor een bouwvergunning is gewijzigd. Je moet voortaan eerst naar het infoloket. Meer info staat op onze website.",
         correctDecision: "approve",
         sensitiveData: [],
-        explanation: "Dit is publieke informatie over procedures, geen persoonsgegevens.",
+        explanation: "Dit is algemene, publieke informatie en bevat geen persoonsgegevens.",
       },
       {
         id: 3,
-        subject: "Vraag: Schuldenlijst gemeente",
+        subject: "Vraag: Overzicht openstaande schulden",
         content:
-          "Hoi, kun je me een lijstje geven van alle burgers die belastingschuld hebben? We willen die aanschrijven. Namen en bedragen graag.",
+          "Hoi, kun je een overzicht sturen van inwoners met een openstaande belastingschuld? Graag met naam en bedrag zodat we ze kunnen aanschrijven.",
         correctDecision: "reject",
-        sensitiveData: ["belastingschuld", "Namen", "bedragen"],
-        explanation: "Financiële gegevens van burgers zijn vertrouwelijk en mogen niet zomaar verspreid worden.",
+        sensitiveData: ["naam", "bedrag", "belastingschuld"],
+        explanation: "Financiële gegevens (zoals schuld en bedragen) zijn vertrouwelijk en mogen niet zomaar gedeeld worden.",
       },
       {
         id: 4,
-        subject: "Notitie: Gemeentelijke agenda volgende week",
+        subject: "Notitie: Raadsvergadering volgende week",
         content:
           "Volgende week dinsdag is er de raadsvergadering om 19:30 uur. Het onderwerp is de begroting 2026. Iedereen mag hieraan deelnemen.",
         correctDecision: "approve",
@@ -66,16 +75,16 @@ function App() {
       },
       {
         id: 5,
-        subject: "Vraag: Medische dossiers voor onderzoek",
+        subject: "Vraag: Medisch dossier voor onderzoek",
         content:
-          "Hoi, voor ons onderzoek naar gezondheidsrisico's hebben we de medische dossiers nodig van alle inwonersboven de 65 jaar. Kunnen die gescand worden?",
+          "Hoi, voor ons onderzoek hebben we een medisch dossier nodig van inwoners boven de 65. Kun je het dossier scannen en mailen?",
         correctDecision: "reject",
-        sensitiveData: ["medische dossiers", "gezondheidsrisico's", "inwonersboven de 65 jaar"],
-        explanation: "Medische gegevens zijn zeer gevoelige persoonsgegevens en vallen onder GDPR.",
+        sensitiveData: ["medisch", "dossier"],
+        explanation: "Medische informatie is zeer gevoelige persoonsgegevens en mag niet via e-mail verspreid worden.",
       },
       {
         id: 6,
-        subject: "Info: Regelwijziging parkeervergunning",
+        subject: "Info: Tarieven parkeervergunning",
         content:
           "De tarieven voor parkeervergunningen zijn verhoogd naar €50 per jaar. U kunt uw vergunning aanvragen bij de receptie of online via onze website.",
         correctDecision: "approve",
@@ -84,21 +93,57 @@ function App() {
       },
       {
         id: 7,
-        subject: "Vraag: BSN nummers medewerkers",
+        subject: "Vraag: Excel met persoonsgegevens medewerkers",
         content:
-          "Hoi, voor de personeelsadministratie heb ik een xlsx met alle BSN nummers van onze medewerkers nodig. Kunnen jullie die geven?",
+          "Hoi, kun je mij een Excel sturen met alle medewerkers inclusief BSN en adres? Ik wil dit in één keer controleren.",
         correctDecision: "reject",
-        sensitiveData: ["BSN nummers", "personeelsadministratie"],
-        explanation: "BSN nummers zijn zeer gevoelige identificatiegegevens.",
+        sensitiveData: ["BSN", "adres"],
+        explanation: "BSN en adres zijn (zeer) gevoelige persoonsgegevens en mogen niet zomaar gedeeld worden.",
       },
       {
         id: 8,
-        subject: "Info: Gesloten ingang gemeentehuis",
+        subject: "Info: Ingang gemeentehuis gesloten",
         content:
           "Dit weekend is de zuidingang van het gemeentehuis gesloten voor onderhoud. Gebruik alstublieft de hoofdingang aan de Marktplein.",
         correctDecision: "approve",
         sensitiveData: [],
         explanation: "Dit is operationele informatie zonder gevoelige gegevens.",
+      },
+      {
+        id: 9,
+        subject: "Vraag: Kenteken voor parkeercontrole",
+        content:
+          "Hoi, kun je de lijst sturen met kenteken en adres van alle bewoners in zone A? Dan kan de parkeercontrole dit vergelijken.",
+        correctDecision: "reject",
+        sensitiveData: ["kenteken", "adres"],
+        explanation: "Kenteken en adres zijn persoonsgegevens (of herleidbaar) en mogen niet zomaar gedeeld worden.",
+      },
+      {
+        id: 10,
+        subject: "Vraag: Stuur even de IBAN voor terugbetaling",
+        content:
+          "Hoi, kun je de IBAN van mevrouw Jansen mailen? Dan kan ik de terugbetaling direct uitvoeren.",
+        correctDecision: "reject",
+        sensitiveData: ["IBAN"],
+        explanation: "Bankgegevens (IBAN) zijn gevoelige persoonsgegevens en horen niet via e-mail rondgestuurd te worden.",
+      },
+      {
+        id: 11,
+        subject: "Info: Afvalinzameling schema",
+        content:
+          "Let op: het afval wordt deze week op vrijdag opgehaald in plaats van donderdag. Dit geldt voor de hele wijk.",
+        correctDecision: "approve",
+        sensitiveData: [],
+        explanation: "Dit is algemene wijkinformatie en bevat geen persoonsgegevens.",
+      },
+      {
+        id: 12,
+        subject: "Vraag: Telefoonnummer voor contactlijst",
+        content:
+          "Hoi, kun je het telefoonnummer en emailadres sturen van alle mensen die een klacht hebben ingediend? Dan kan ik ze bellen.",
+        correctDecision: "reject",
+        sensitiveData: ["telefoonnummer", "emailadres"],
+        explanation: "Telefoonnummer en e-mailadres zijn persoonsgegevens en mogen niet zomaar gedeeld worden.",
       },
     ]);
   }, []);
@@ -124,13 +169,36 @@ function App() {
 
   const currentEmail = emails[currentEmailIndex];
 
-  const addHighlight = (phrase: string) => {
-    if (!highlights.includes(phrase)) {
+  const toggleHighlight = (phrase: string) => {
+    if (highlights.includes(phrase)) {
+      // Verwijder highlight als deze al bestaat
+      setHighlights(highlights.filter(h => h !== phrase));
+    } else {
+      // Voeg highlight toe als deze nog niet bestaat
       setHighlights([...highlights, phrase]);
     }
   };
 
   const submitDecision = (decision: string) => {
+    // Check if this is a wrong answer
+    const isCorrect = decision === currentEmail.correctDecision;
+
+    // If the player already played the minigame twice, a new wrong answer ends the game
+    if (!isCorrect && !wrongAnswerAttempt && minigamePlays >= MAX_MINIGAME_PLAYS) {
+      setScreen("lose");
+      return;
+    }
+    
+    // If wrong answer and no second chance granted yet, trigger minigame
+    if (!isCorrect && !secondChanceGranted && !wrongAnswerAttempt) {
+      setPendingDecision(decision);
+      setWrongAnswerAttempt(true);
+      setMinigamePlays(prev => prev + 1);
+      setShowMinigame(true);
+      return; // Don't process the answer yet
+    }
+
+    // Process the answer (either correct answer, or after minigame resolution)
     let points = 0;
 
     if (decision === currentEmail.correctDecision) points += 10;
@@ -143,6 +211,11 @@ function App() {
     setScore(newScore);
     setHighlights([]);
 
+    // Reset minigame state for next question
+    setSecondChanceGranted(false);
+    setWrongAnswerAttempt(false);
+    setPendingDecision(null);
+
     const nextIndex = currentEmailIndex + 1;
     if (nextIndex >= emails.length) {
       setScreen("results");
@@ -151,6 +224,23 @@ function App() {
       setCurrentEmailIndex(nextIndex);
       setScreen("email");
     }
+  };
+
+  const handleMinigameSuccess = () => {
+    setShowMinigame(false);
+    setSecondChanceGranted(true);
+    setWrongAnswerAttempt(false);
+    setPendingDecision(null);
+    // User stays on the same question for a retry
+  };
+
+  const handleMinigameFail = () => {
+    setShowMinigame(false);
+    setHighlights([]);
+    setSecondChanceGranted(false);
+    setWrongAnswerAttempt(false);
+    setPendingDecision(null);
+    setScreen("lose");
   };
 
   const saveScore = async (finalScore: number) => {
@@ -170,21 +260,23 @@ function App() {
     return "Gelijk gebleven";
   };
 
-  const finishMinigame = () => {
-    setScreen("email");
-  };
-
   // ---------------- UI ----------------
 
   if (screen === "start") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white gap-6">
-        <h1 className="text-4xl font-bold">Privacy Quest</h1>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted gap-8 px-4">
+        <div className="text-center">
+          <div className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <span className="text-5xl">🔒</span>
+          </div>
+          <h1 className="text-5xl font-bold text-foreground mb-3">Privacy Quest</h1>
+          <p className="text-lg text-muted-foreground mb-8">Leer over privacy door e-mails te beoordelen</p>
+        </div>
         <button
           onClick={startGame}
-          className="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-xl"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
         >
-          Start Game
+          🚀 Start Game
         </button>
       </div>
     );
@@ -192,26 +284,45 @@ function App() {
 
   if (screen === "email" && currentEmail) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white p-8">
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted p-8">
         <div className="max-w-3xl mx-auto">
-          <div className="mb-6 text-sm text-gray-400">
-            Email {currentEmailIndex + 1} van {emails.length}
+          <div className="mb-6 flex justify-between items-center">
+            <span className="text-sm text-muted-foreground font-medium">
+              Email {currentEmailIndex + 1} van {emails.length}
+            </span>
+            <div className="score-badge">
+              <span className="text-primary">⭐</span>
+              <span>{score} punten</span>
+            </div>
           </div>
           
-          <div className="bg-slate-800 p-6 rounded-lg mb-6">
-            <h2 className="text-2xl font-bold mb-4">Van: Gemeentewerker</h2>
-            <p className="text-gray-300 mb-2">Onderwerp: {currentEmail.subject}</p>
+          {secondChanceGranted && (
+            <div className="mb-6 p-4 bg-success/10 border-2 border-success rounded-xl text-success-foreground animate-slide-up">
+              <span className="font-bold">🎉 Tweede kans!</span> Je hebt de minigame voltooid. Probeer het nog een keer!
+            </div>
+          )}
+          
+          <div className="game-card mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-xl">📧</span>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Van: Gemeentewerker</h2>
+                <p className="text-sm text-muted-foreground">Onderwerp: {currentEmail.subject}</p>
+              </div>
+            </div>
             
-            <div className="border-t border-gray-600 pt-4 mt-4">
-              <p className="mb-6 leading-relaxed">
+            <div className="border-t border-border pt-4 mt-4">
+              <p className="mb-6 leading-relaxed text-foreground">
                 {currentEmail.content.split(" ").map((word: string, i: number) => (
                   <span
                     key={i}
-                    onClick={() => addHighlight(word.replace(/[.,!?]/g, ""))}
-                    className={`cursor-pointer inline transition-colors ${
+                    onClick={() => toggleHighlight(word.replace(/[.,!?]/g, ""))}
+                    className={`cursor-pointer inline transition-all duration-200 rounded px-1 ${
                       highlights.includes(word.replace(/[.,!?]/g, ""))
-                        ? "bg-red-500 text-white font-bold"
-                        : "hover:bg-slate-700"
+                        ? "bg-destructive text-destructive-foreground font-bold shadow-sm"
+                        : "hover:bg-muted"
                     }`}
                   >
                     {word}{" "}
@@ -221,83 +332,126 @@ function App() {
             </div>
           </div>
 
-          <div className="bg-slate-800 p-4 rounded-lg mb-6">
-            <p className="text-sm text-yellow-300 mb-2">💡 Tip: Klik op gevoelige data om deze rood te highlighten</p>
-            <p className="text-sm text-gray-300">
-              Gevoelige data: {currentEmail.sensitiveData.join(", ")}
+          <div className="game-card mb-6 bg-warning/5 border-warning/20">
+            <p className="text-sm text-warning-foreground mb-2 font-semibold">💡 Tip: Klik op woorden om gevoelige data te markeren (klik opnieuw om te verwijderen)</p>
+            <p className="text-sm text-muted-foreground">
+              Gevoelige data in deze email: {currentEmail.sensitiveData.join(", ")}
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Je hebt {highlights.length} {highlights.length === 1 ? 'woord' : 'woorden'} gemarkeerd
             </p>
           </div>
 
-          <div className="flex gap-4 mb-6">
+          <div className="grid grid-cols-2 gap-4 mb-6">
             <button
               onClick={() => submitDecision("approve")}
-              className="flex-1 bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-semibold transition-colors"
+              className="bg-success hover:bg-success/90 text-success-foreground px-6 py-4 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex items-center justify-center gap-2"
             >
-              ✓ Goedkeuren (veilig om te sturen)
+              <span className="text-xl">✓</span>
+              <span>Goedkeuren</span>
             </button>
             <button
               onClick={() => submitDecision("reject")}
-              className="flex-1 bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-semibold transition-colors"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-6 py-4 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex items-center justify-center gap-2"
             >
-              ✗ Afkeuren (bevat gevoelige data)
+              <span className="text-xl">✗</span>
+              <span>Afkeuren</span>
             </button>
           </div>
-
-          <div className="flex justify-between text-sm">
-            <p className="text-gray-400">Score: <span className="text-yellow-400 font-bold">{score}</span></p>
-            <p className="text-gray-400">Gehighlighte items: {highlights.length}</p>
-          </div>
         </div>
-      </div>
-    );
-  }
 
-  if (screen === "minigame") {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-purple-900 text-white gap-6">
-        <h2 className="text-2xl font-bold">MiniGame Tijd 🎮</h2>
-        <button
-          onClick={finishMinigame}
-          className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-xl"
-        >
-          Minigame afronden
-        </button>
+        {/* Minigame Modal */}
+        <MinigameModal 
+          isOpen={showMinigame}
+          onSuccess={handleMinigameSuccess}
+          onFail={handleMinigameFail}
+        />
       </div>
     );
   }
 
   if (screen === "results") {
     return (
-      <div className="min-h-screen bg-slate-900 text-white p-8">
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted p-8">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-4xl font-bold mb-6">🎉 Spel Afgerond!</h2>
+          <div className="text-center mb-8">
+            <div className="text-7xl mb-4 animate-confetti">🎉</div>
+            <h2 className="text-5xl font-bold text-foreground mb-3">Spel Afgerond!</h2>
+            <p className="text-lg text-muted-foreground">Geweldig gedaan met het beschermen van privacy!</p>
+          </div>
           
-          <div className="bg-slate-800 p-6 rounded-lg mb-6">
-            <p className="text-2xl mb-4">Eindstand: <span className="text-yellow-400 font-bold">{score}</span> punten</p>
-            <p className="text-lg text-gray-300">{compareScores()}</p>
+          <div className="game-card mb-6 text-center">
+            <p className="text-lg text-muted-foreground mb-2">Eindstand</p>
+            <div className="score-badge text-3xl mb-3">
+              <span>⭐</span>
+              <span className="score-positive">{score}</span>
+              <span className="text-muted-foreground">punten</span>
+            </div>
+            <p className="text-lg font-semibold text-primary">{compareScores()}</p>
           </div>
 
-          <div className="bg-slate-800 p-6 rounded-lg mb-6">
-            <h3 className="text-xl font-semibold mb-4">📊 Leaderboard</h3>
-            <ul className="space-y-2">
+          <div className="game-card mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">📊</span>
+              <h3 className="text-2xl font-bold text-foreground">Leaderboard</h3>
+            </div>
+            <ul className="space-y-3">
               {leaderboard && leaderboard.length > 0 ? (
                 leaderboard.map((player: LeaderboardPlayer, i: number) => (
-                  <li key={i} className="flex justify-between text-gray-300">
-                    <span>{i + 1}. {player.name}</span>
-                    <span className="font-bold">{player.score} punten</span>
+                  <li key={i} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                    <span className="text-foreground font-medium">
+                      <span className="text-primary font-bold mr-2">{i + 1}.</span>
+                      {player.name}
+                    </span>
+                    <span className="score-badge text-sm">{player.score} punten</span>
                   </li>
                 ))
               ) : (
-                <li className="text-gray-400">Geen leaderboard beschikbaar</li>
+                <li className="text-muted-foreground text-center py-4">Geen leaderboard beschikbaar</li>
               )}
             </ul>
           </div>
 
           <button
             onClick={() => window.location.reload()}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-lg font-semibold transition-colors"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-3"
           >
-            🔄 Opnieuw Spelen
+            <span className="text-2xl">🔄</span>
+            <span>Opnieuw Spelen</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "lose") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted p-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="text-7xl mb-4">😢</div>
+            <h2 className="text-5xl font-bold text-foreground mb-3">Game Over</h2>
+            <p className="text-lg text-muted-foreground">
+              Je hebt de minigame verloren of je hebt je 2 minigame-kansen al gebruikt.
+            </p>
+          </div>
+
+          <div className="game-card mb-6 text-center">
+            <p className="text-lg text-muted-foreground mb-2">Jouw score</p>
+            <div className="score-badge text-3xl mb-3">
+              <span>⭐</span>
+              <span className="score-negative">{score}</span>
+              <span className="text-muted-foreground">punten</span>
+            </div>
+            <p className="text-sm text-muted-foreground">Minigames gespeeld: {minigamePlays}/{MAX_MINIGAME_PLAYS}</p>
+          </div>
+
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-3"
+          >
+            <span className="text-2xl">🔄</span>
+            <span>Opnieuw Proberen</span>
           </button>
         </div>
       </div>

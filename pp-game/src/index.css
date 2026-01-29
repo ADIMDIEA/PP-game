@@ -1,1 +1,138 @@
 @import "tailwindcss";
+
+@theme {
+  /* Main background - warm off-white */
+  --color-background: oklch(98% 0.01 90);
+  --color-foreground: oklch(30% 0.02 220);
+
+  /* Cards - clean white */
+  --color-card: oklch(100% 0 0);
+  --color-card-foreground: oklch(30% 0.02 220);
+
+  --color-popover: oklch(100% 0 0);
+  --color-popover-foreground: oklch(30% 0.02 220);
+
+  /* Primary - Friendly teal/mint */
+  --color-primary: oklch(55% 0.15 180);
+  --color-primary-foreground: oklch(100% 0 0);
+
+  /* Secondary - Soft lavender */
+  --color-secondary: oklch(96% 0.02 260);
+  --color-secondary-foreground: oklch(35% 0.02 220);
+
+  /* Muted - Gentle gray */
+  --color-muted: oklch(94% 0.01 220);
+  --color-muted-foreground: oklch(55% 0.01 220);
+
+  /* Accent - Warm coral for positive actions */
+  --color-accent: oklch(70% 0.15 30);
+  --color-accent-foreground: oklch(100% 0 0);
+
+  /* Success - Soft green */
+  --color-success: oklch(60% 0.15 150);
+  --color-success-foreground: oklch(100% 0 0);
+
+  /* Warning - Warm amber */
+  --color-warning: oklch(70% 0.15 70);
+  --color-warning-foreground: oklch(20% 0.05 70);
+
+  --color-destructive: oklch(65% 0.20 20);
+  --color-destructive-foreground: oklch(100% 0 0);
+
+  --color-border: oklch(88% 0.01 220);
+  --color-input: oklch(88% 0.01 220);
+  --color-ring: oklch(55% 0.15 180);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Game card styles */
+.game-card {
+  background-color: var(--color-card);
+  color: var(--color-card-foreground);
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  border: 1px solid var(--color-border);
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.game-card-hover:hover {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  transform: translateY(-0.25rem);
+}
+
+/* Score display */
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  background: oklch(95% 0.03 180);
+  border: 2px solid oklch(85% 0.05 180);
+}
+
+/* Positive/Negative indicators */
+.score-positive {
+  color: oklch(55% 0.15 150);
+}
+
+.score-negative {
+  color: oklch(60% 0.18 20);
+}
+
+/* Minigame animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes confetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-confetti {
+  animation: confetti 1s ease-out forwards;
+}
